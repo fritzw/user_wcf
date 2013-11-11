@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<info>
+	<id>user_wcf</id>
+	<name>WCF user backend</name>
+	<description>Owncloud user backend for the Woltlab Community Framework (WCF) used by Woltlab Burning Board (WBB3)</description>
+	<licence>AGPL</licence>
+	<author>Fritz Webering</author>
+	<require>5</require>
+	<shipped>true</shipped>
+	<types>
+        <type>authentication</type>
+        <type>prelogin</type>
+	</types>
+</info>
