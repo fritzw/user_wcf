@@ -1,4 +1,11 @@
 <?php
+/**
+ * Copyright (c) 2013 Fritz Webering <fritz@webering.eu>
+ * This file is licensed under the Affero General Public License version 3 or
+ * later.
+ * See the LICENSE file.
+ */
+
 
 namespace OCA\User_WCF\lib;
 

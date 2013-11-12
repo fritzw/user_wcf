@@ -1,28 +1,35 @@
 <?php
 /**
- * Copyright (c) 2012 Robin Appelman <icewind@owncloud.com>
+ * Copyright (c) 2013 Fritz Webering <fritz@webering.eu>
  * This file is licensed under the Affero General Public License version 3 or
  * later.
- * See the COPYING-README file.
+ * See the LICENSE file.
  */
 
 namespace OCA\user_wcf;
 
+
+/**
+ * This class authenticates users against a WCF database if they belong to
+ * one or more of the groups listed in the $authorizedGroups paramter. The
+ * database configuration is imported from the WCF configuration file of
+ * the WCF installation given in the $wcfPath paramter.
+ */
 class User_WCF extends \OC_User_Backend implements \OC_User_Interface {
     protected $authorizedGroups;
     protected $groupsCondition;
     protected $db = NULL;
     protected $dbUser, $dbHost, $dbPassword, $dbName;
 
-    public function __construct($wcf_path, $authorized_groups) {
-        require $wcf_path.'/config.inc.php';
+    public function __construct($wcfPath, $authorizedGroups) {
+        require $wcfPath.'/config.inc.php';
         $this->dbHost = $dbHost;
         $this->dbUser = $dbUser;
         $this->dbPassword = $dbPassword;
         $this->dbName = $dbName;
         $this->wcfN = 'wcf'.WCF_N;
 
-        $this->authorizedGroups = $authorized_groups;
+        $this->authorizedGroups = $authorizedGroups;
         $groups = array();
         foreach ($this->authorizedGroups as $group) {
             $groups[] = "{$this->wcfN}_group.groupName='$group'";
@@ -41,7 +48,7 @@ class User_WCF extends \OC_User_Backend implements \OC_User_Interface {
      */
     public function checkPassword($uid, $password) {
         if (!$this->connect()) return FALSE;
-        $authenticated_as = FALSE;
+        $authenticatedAs = FALSE;
 
         $username = $this->db->real_escape_string($uid);
         $where = "LOWER({$this->wcfN}_user.username)=LOWER('$username')";
@@ -50,19 +57,23 @@ class User_WCF extends \OC_User_Backend implements \OC_User_Interface {
         if ($result) {
             if ($result->num_rows > 0) {
                 $row = $result->fetch_assoc();
-                $doubleSalted = lib\StringUtil::getDoubleSaltedHash($password, $row['salt']);
+                $doubleSalted = lib\StringUtil::getDoubleSaltedHash(
+                    $password, $row['salt']);
 
                 if ($doubleSalted === $row['password']) {
-                    $authenticated_as = $row['username'];
+                    $authenticatedAs = $row['username'];
+                    $this->warn('User "'.$authenticatedAs.
+                        '" logged in successfully.');
                 }
             }
             else {
-                $this->debug("Username $username not found in WCF database in authorized groups.");
+                $this->debug("Username $username not found in WCF ".
+                    "database in authorized groups.");
             }
             $result->close();
         }
 
-        return $authenticated_as;
+        return $authenticatedAs;
     }
 
     public function userExists($uid) {
@@ -118,7 +129,8 @@ class User_WCF extends \OC_User_Backend implements \OC_User_Interface {
         $result = $this->db->query($query);
 
         if ($result === FALSE) {
-            $this->warn("Error querying data from WCF database: {$this->db->error} ({$this->db->errno}). Query was: $query");
+            $this->warn("Error querying data from WCF database: ".
+                "{$this->db->error} ({$this->db->errno}). Query was: $query");
         }
         return $result;
     }
@@ -128,7 +140,8 @@ class User_WCF extends \OC_User_Backend implements \OC_User_Interface {
             $this->db = new \mysqli($this->dbHost, $this->dbUser,
                     $this->dbPassword, $this->dbName);
             if ($this->db->connect_error) {
-                $this->warn('Unable to connect to database: ' . $this->db->connect_error);
+                $this->warn('Unable to connect to database: '.
+                    $this->db->connect_error);
                 $this->db = FALSE;
             }
         }
